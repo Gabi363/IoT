@@ -18,6 +18,7 @@
     "C_Cpp.errorSquiggles": "disabled",
     "files.associations": {
         "task.h": "c",
-        "freertos.h": "c"
+        "freertos.h": "c",
+        "nimble_port.h": "c"
     }
 }
