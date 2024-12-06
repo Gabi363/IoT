@@ -25,6 +25,7 @@
 #include "driver/gpio.h"
 
 #include "ble_manager.h"
+#include "mqtt_client.c"
 
 #define EXAMPLE_ESP_WIFI_SSID      CONFIG_ESP_WIFI_SSID
 #define EXAMPLE_ESP_WIFI_PASS      CONFIG_ESP_WIFI_PASSWORD
@@ -257,8 +258,8 @@ static void http_get_task(void *pvParameters) {
 void app_main(void)
 {
     // // led blinking
-    // esp_rom_gpio_pad_select_gpio(BLINK_GPIO);
-    // gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
+    esp_rom_gpio_pad_select_gpio(BLINK_GPIO);
+    gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
     // xTaskCreate(&led_task, "led_task", 8192, NULL, 5, NULL); 
 
     //Initialize NVS
@@ -269,13 +270,19 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
+    // WIFI
     // ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
     // wifi_init_sta();
 
+    // BLE PERIPHERIAL
     ble_init();
     xTaskCreate(nimble_host_task,"NimBLE", 4096, NULL, 5, NULL);
-
     while(true) {
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }
+
+    // MQTT
+    // mqtt_app_start();
+
+
 }

@@ -8,14 +8,31 @@
 #include "cJSON.h"
 #include "esp_bt.h"
 #include "esp_random.h"
+#include "esp_mac.h"
 
 #include "gatt_svc.h"
+#include "driver/gpio.h"
 
 #define WIFI_SSID_MAX_LEN 64
 #define WIFI_PASS_MAX_LEN 64
+#define BLINK_GPIO GPIO_NUM_2
 
 static const char* TAG = "GATT_SVR";
 static TaskHandle_t xHeartIndicateTask = NULL;
+
+
+
+// void ble_led_task(void *pvParameters, char* message){
+//     if(message == "on"){
+//         gpio_set_level(BLINK_GPIO, 1);
+//     }
+//     else{
+//         gpio_set_level(BLINK_GPIO, 0);
+//     }
+// }
+
+
+
 
 /* Private function declarations */
 static void wifi_cred_chr_access(uint16_t conn_handle, uint16_t attr_handle,
@@ -102,40 +119,16 @@ static void wifi_cred_chr_access(uint16_t conn_handle, uint16_t attr_handle,
             char buffer[ctxt->om->om_len + 1]; // +1 for null-termination
             memcpy(buffer, ctxt->om->om_data, ctxt->om->om_len);
             buffer[ctxt->om->om_len] = '\0'; // Null-terminate the buffer
-
             ESP_LOGI(TAG, "Received data: %s", buffer);
 
-            // @todo
-            // // Parse the JSON string
-            // cJSON *json = cJSON_Parse(buffer);
-            // if (json == NULL) {
-            //     ESP_LOGE(TAG, "Failed to parse JSON: %s", cJSON_GetErrorPtr());
-            //     return; // Handle the error appropriately
-            // }
-
-            // // Extract SSID and password items
-            // cJSON *ssid_item = cJSON_GetObjectItem(json, "ssid");
-            // cJSON *pass_item = cJSON_GetObjectItem(json, "pass");
-
-            // // Check if the extracted items are valid
-            // if (ssid_item != NULL && cJSON_IsString(ssid_item) && ssid_item->valuestring != NULL) {
-            //     // Process SSID
-            //     ESP_LOGI(TAG, "SSID: %s", ssid_item->valuestring);
-            // } else {
-            //     ESP_LOGE(TAG, "SSID not found or not a string");
-            // }
-
-            // if (pass_item != NULL && cJSON_IsString(pass_item) && pass_item->valuestring != NULL) {
-            //     // Process Password
-            //     ESP_LOGI(TAG, "Password: %s", pass_item->valuestring);
-            // } else {
-            //     ESP_LOGE(TAG, "Password not found or not a string");
-            // }
-
-            // // Clean up the cJSON object
-            // cJSON_Delete(json);
-
-            // return 0;
+            if(strcmp(buffer, "on") == 0){
+                ESP_LOGI(TAG, "turn on led");
+                gpio_set_level(BLINK_GPIO, 1);
+            }
+            else if(strcmp(buffer, "off") == 0){
+                ESP_LOGI(TAG, "turn off led");
+                gpio_set_level(BLINK_GPIO, 0);
+            }
         }
     }
 }
@@ -163,7 +156,7 @@ static int heart_rate_chr_access(uint16_t conn_handle, uint16_t attr_handle,
         /* Verify attribute handle */
         if (attr_handle == heart_rate_chr_val_handle) {
             /* Update access buffer value */
-            heart_rate_chr_val[1] = 60 + (uint8_t)(esp_random() % 21);
+            heart_rate_chr_val[1] = 60 + (uint8_t)(esp_random() % 31);
             rc = os_mbuf_append(ctxt->om, &heart_rate_chr_val,
                                 sizeof(heart_rate_chr_val));
             return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
@@ -239,7 +232,6 @@ void gatt_svr_subscribe_cb(struct ble_gap_event *event) {
  *      4. Create a task to send heart rate indication
  */
 int gatt_svc_init(void) {
-    /* Local variables */
     int rc;
 
     /* 1. GATT service initialization */

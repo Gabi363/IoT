@@ -52,14 +52,12 @@ bool ble_init() {
     ble_hs_cfg.sync_cb = on_stack_sync;  // when controller and host are synchronized -> APP_START
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
-    /* Store host configuration */
-    // ble_store_config_init(); // TODO: What about this
+    // ble_store_config_init();
 
     return true;
 }
 
 void nimble_host_task(void *param) {
-    /* Task entry log */
     ESP_LOGI(TAG, "nimble host task has been started!");
 
     /* This function won't return until nimble_port_stop() is executed */
@@ -71,17 +69,6 @@ void nimble_host_task(void *param) {
 void nimble_host_stop_task() {
     ESP_LOGI(TAG, "Cleaning up NimBLE host stack");
 
-    // // NOT NEEDED
-    // ble_gap_adv_stop();
-
-    // for (int i = 0; i < BLE_MAX_CONNECTIONS; i++) {
-    //     if (ble_gap_conn_active(i)) {
-    //         ble_gap_terminate(i, BLE_ERR_REM_USER_CONN_TERM);
-    //         vTaskDelay(100 / portTICK_PERIOD_MS); // Ensure the termination is processed
-    //     }
-    // } 
-
-    /* Stop the NimBLE host */
     nimble_port_stop();
 
     nimble_port_deinit();

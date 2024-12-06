@@ -146,11 +146,8 @@ static void start_advertising(void) {
 }
 
 static int gap_event_handler(struct ble_gap_event *event, void *arg) {
-    /* Local variables */
     int rc = 0;
     struct ble_gap_conn_desc desc;
-
-    ESP_LOGE("cokolwiek", "xxx");
 
     /* Handle different GAP event */
     switch (event->type) {
@@ -273,7 +270,6 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg) {
 
 /* Public functions */
 void adv_init(void) {
-    /* Local variables */
     int rc = 0;
     char addr_str[18] = {0};
 
