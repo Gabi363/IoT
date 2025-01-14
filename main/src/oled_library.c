@@ -102,52 +102,6 @@ void ssd1306_init_with_config(const ssd1306_config_t *config) {
     i2c_write_command(0xAF); // Display ON
 }
 
-
-// Inicjalizacja magistrali I2C
-// esp_err_t i2c_master_init(void) {
-//     i2c_config_t conf = {
-//         .mode = I2C_MODE_MASTER,
-//         .sda_io_num = I2C_MASTER_SDA_IO,
-//         .scl_io_num = I2C_MASTER_SCL_IO,
-//         .sda_pullup_en = GPIO_PULLUP_ENABLE,
-//         .scl_pullup_en = GPIO_PULLUP_ENABLE,
-//         .master.clk_speed = I2C_MASTER_FREQ_HZ,
-//     };
-//     ESP_ERROR_CHECK(i2c_param_config(I2C_MASTER_NUM, &conf));
-//     return i2c_driver_install(I2C_MASTER_NUM, conf.mode, 0, 0, 0);
-// }
-
-// void ssd1306_init() {
-//     i2c_write_command(0xAE); // Display OFF
-//     i2c_write_command(0x20); // Memory Addressing Mode
-//     i2c_write_command(0x02); // Page Addressing Mode
-//     i2c_write_command(0xB0); // Start at Page 0
-//     i2c_write_command(0xC8); // COM Output Scan Direction
-//     i2c_write_command(0x00); // Set Lower Column Start Address
-//     i2c_write_command(0x10); // Set Higher Column Start Address
-//     i2c_write_command(0x40); // Set Display Start Line
-//     i2c_write_command(0x81); // Set Contrast Control
-//     i2c_write_command(0xFF); // Maximum contrast
-//     i2c_write_command(0xA1); // Segment Re-map
-//     i2c_write_command(0xA6); // Normal Display
-//     i2c_write_command(0xA8); // Multiplex Ratio
-//     i2c_write_command(0x3F); // 1/64 Duty
-//     i2c_write_command(0xA4); // Entire Display ON
-//     i2c_write_command(0xD3); // Set Display Offset
-//     i2c_write_command(0x00); // No offset
-//     i2c_write_command(0xD5); // Set Display Clock Divide Ratio
-//     i2c_write_command(0xF0); // Default value
-//     i2c_write_command(0xD9); // Set Pre-charge Period
-//     i2c_write_command(0x22); // Default value
-//     i2c_write_command(0xDA); // Set COM Pins Hardware Configuration
-//     i2c_write_command(0x12); // Default value
-//     i2c_write_command(0xDB); // Set VCOMH Deselect Level
-//     i2c_write_command(0x20); // Default value
-//     i2c_write_command(0x8D); // Charge Pump
-//     i2c_write_command(0x14); // Enable charge pump
-//     i2c_write_command(0xAF); // Display ON
-// }
-
 void ssd1306_display_on() {
     i2c_write_command(0xAF); // Display ON
 }
@@ -204,7 +158,7 @@ void display_on_page(const char *text, uint8_t page) {
 	i2c_master_write_byte(cmd, 0xB0 | page, true); // reset page
 
 	i2c_master_stop(cmd);
-	i2c_master_cmd_begin(I2C_NUM_0, cmd, 10/portTICK_PERIOD_MS);
+	i2c_master_cmd_begin(I2C_NUM_0, cmd, 100 /portTICK_PERIOD_MS);
 	i2c_cmd_link_delete(cmd);
 
 
@@ -216,10 +170,9 @@ void display_on_page(const char *text, uint8_t page) {
         i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_DATA_STREAM, true);
 
         i2c_master_write(cmd, font8x8_basic_tr[(uint8_t)text[i]], 8, true);
-            // ESP_LOGI(TAG2, "Pressure: %.2f hPa", sensor_data.pressure);
 
         i2c_master_stop(cmd);
-        i2c_master_cmd_begin(I2C_NUM_0, cmd, 10/portTICK_PERIOD_MS);
+        i2c_master_cmd_begin(I2C_NUM_0, cmd, 100 /portTICK_PERIOD_MS);
         i2c_cmd_link_delete(cmd);
 	}
 

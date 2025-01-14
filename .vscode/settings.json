@@ -46,6 +46,7 @@
         "i2c_types.h": "c",
         "bmx280.h": "c",
         "bmx280_bits.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "esp_wifi.h": "c"
     }
 }

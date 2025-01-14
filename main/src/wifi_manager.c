@@ -150,21 +150,6 @@ void save_wifi_credentials_to_nvs(wifi_credentials_t wifi_credentials)
     ESP_LOGI("NVS", "Wifi credentials saved successfully to NVS");
 }
 
-void led_task(void *pvParameters){
-    while(1){
-        if(WIFI_CONNECTED){
-            gpio_set_level(BLINK_GPIO, 1);
-            vTaskDelay(100 / portTICK_PERIOD_MS);
-        }
-        else{
-            gpio_set_level(BLINK_GPIO, 1);
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
-            gpio_set_level(BLINK_GPIO, 0);
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
-        }
-    }
-}
-
 // static void http_task(void *pvParameters);
 static void event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
