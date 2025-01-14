@@ -24,8 +24,10 @@
 #include "mqtt_client.h"
 #include "mqtt_manager.h"
 
-char *user = "user1";
-char *device = "(mac_address)";
+char user[30] = "user";
+char mac_addr[18] = "mac_address";
+
+char *receive_user_topic = "username";
 
 esp_mqtt_client_handle_t client;
 
@@ -36,14 +38,15 @@ static void log_error_if_nonzero(const char *message, int error_code)
     }
 }
 
+// MQTT PUBLIKACJA
 void mqtt_publish_task(void *pvParameters)
 {
-    uint8_t mac[6];
-    char mac_addr[18];
-    if (esp_wifi_get_mac(WIFI_IF_STA, mac) == ESP_OK) {
-        ESP_LOGI("MQTT", "Adres MAC: %02X:%02X:%02X:%02X:%02X:%02X\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-        snprintf(mac_addr, sizeof(mac_addr), "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    }
+    // uint8_t mac[6];
+    // char mac_addr[18];
+    // if (esp_wifi_get_mac(WIFI_IF_STA, mac) == ESP_OK) {
+    //     ESP_LOGI("MQTT", "Adres MAC: %02X:%02X:%02X:%02X:%02X:%02X\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    //     snprintf(mac_addr, sizeof(mac_addr), "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    // }
 
     float temperature = 0.0;
 
@@ -51,21 +54,29 @@ void mqtt_publish_task(void *pvParameters)
     {
         temperature += 0.1;
 
-        char topic[50];
-        char payload[50];
+        char topic[100];
+        char payload[100];
 
-        snprintf(topic, sizeof(topic), "%s/%s/temperature", user, device);
+        snprintf(topic, sizeof(topic), "%s/%s/temperature", user, mac_addr);
         snprintf(payload, sizeof(payload), "{\"value\": %.2f, \"unit\": \"C\"}", temperature);
 
-        esp_mqtt_client_publish(client, topic, payload,
-                                0,  // automatic length calculation
-                                1,  // QoS = 1
-                                0); // not retained
+        esp_mqtt_client_publish(client, topic, payload, 0, 1, 0);
         ESP_LOGI("MQTT", "Published: %s -> %s", topic, payload);
 
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        vTaskDelay(pdMS_TO_TICKS(30000));
     }
 }
+// mqtt_message_receive
+// void mqtt_receive_task(void *pvParameters)
+// {
+//     while (true)
+//     {
+//         int status = mqtt_message_receive(client, 10000);
+//         ESP_LOGI("MQTT", "Received: %d", status);
+
+//         vTaskDelay(pdMS_TO_TICKS(5000));
+//     }
+// }
 
 
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
@@ -78,7 +89,11 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI("MQTT", "MQTT_EVENT_CONNECTED");
+
+        int msg_id = esp_mqtt_client_subscribe(client, "username", 1);  // QoS = 1
+        ESP_LOGI("MQTT", "Subscribed to topic, msg_id=%d", msg_id);
         xTaskCreate(mqtt_publish_task, "mqtt_publish_task", 4096, NULL, 5, NULL);
+        // xTaskCreate(mqtt_receive_task, "mqtt_receive_task", 4096, NULL, 5, NULL);
         break;
         
     case MQTT_EVENT_DISCONNECTED:
@@ -98,8 +113,15 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         break;
     case MQTT_EVENT_DATA:
         ESP_LOGI("MQTT", "MQTT_EVENT_DATA");
-        printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
-        printf("DATA=%.*s\r\n", event->data_len, event->data);
+
+        char topic[128];
+        snprintf(topic, sizeof(topic), "%.*s", event->topic_len, event->topic);
+        ESP_LOGI("MQTT", "Topic: %s, data: %s", topic, user);
+
+        if(strcmp(topic, receive_user_topic) == 0) {
+            snprintf(user, sizeof(topic), "%.*s", event->data_len, event->data);
+            printf("DATA=%s", user);
+        }
         break;
     case MQTT_EVENT_ERROR:
         ESP_LOGI("MQTT", "MQTT_EVENT_ERROR");
@@ -119,6 +141,11 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
 void mqtt_app_start(void)
 {
+    uint8_t mac[6];
+    if (esp_wifi_get_mac(WIFI_IF_STA, mac) == ESP_OK) {
+        ESP_LOGI("MQTT", "Adres MAC: %02X:%02X:%02X:%02X:%02X:%02X\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+        snprintf(mac_addr, sizeof(mac_addr), "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    }
 
     esp_mqtt_client_config_t mqtt_cfg = {
         // .broker.address.uri = CONFIG_BROKER_URL,

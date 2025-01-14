@@ -4,6 +4,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+
 // I2C configuration
 #define I2C_MASTER_NUM I2C_NUM_0
 #define I2C_MASTER_SDA_IO 2
@@ -22,18 +23,19 @@ static uint16_t dig_T1;
 static int16_t dig_T2, dig_T3;
 static uint16_t dig_P1;
 static int16_t dig_P2, dig_P3, dig_P4, dig_P5, dig_P6, dig_P7, dig_P8, dig_P9;
-void i2c_master_init() {
-   i2c_config_t conf = {
-       .mode = I2C_MODE_MASTER,
-       .sda_io_num = I2C_MASTER_SDA_IO,
-       .sda_pullup_en = GPIO_PULLUP_ENABLE,
-       .scl_io_num = I2C_MASTER_SCL_IO,
-       .scl_pullup_en = GPIO_PULLUP_ENABLE,
-       .master.clk_speed = I2C_MASTER_FREQ_HZ,
-   };
-   i2c_param_config(I2C_MASTER_NUM, &conf);
-   i2c_driver_install(I2C_MASTER_NUM, conf.mode, 0, 0, 0);
-}
+
+// void i2c_master_init() {
+//    i2c_config_t conf = {
+//        .mode = I2C_MODE_MASTER,
+//        .sda_io_num = I2C_MASTER_SDA_IO,
+//        .sda_pullup_en = GPIO_PULLUP_ENABLE,
+//        .scl_io_num = I2C_MASTER_SCL_IO,
+//        .scl_pullup_en = GPIO_PULLUP_ENABLE,
+//        .master.clk_speed = I2C_MASTER_FREQ_HZ,
+//    };
+//    i2c_param_config(I2C_MASTER_NUM, &conf);
+//    i2c_driver_install(I2C_MASTER_NUM, conf.mode, 0, 0, 0);
+// }
 void bmp280_read_calibration_data() {
    uint8_t calib_data[BMP280_TEMP_PRESS_CALIB_DATA_LENGTH];
    i2c_master_write_read_device(I2C_MASTER_NUM, BMP280_ADDR,

@@ -208,18 +208,21 @@ void display_on_page(const char *text, uint8_t page) {
 	i2c_cmd_link_delete(cmd);
 
 
+
 	for (uint8_t i = 0; i < text_len; i++) {
-			cmd = i2c_cmd_link_create();
-			i2c_master_start(cmd);
-			i2c_master_write_byte(cmd, (oled_config.i2c_address << 1) | I2C_MASTER_WRITE, true);
+        cmd = i2c_cmd_link_create();
+        i2c_master_start(cmd);
+        i2c_master_write_byte(cmd, (oled_config.i2c_address << 1) | I2C_MASTER_WRITE, true);
+        i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_DATA_STREAM, true);
 
-			i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_DATA_STREAM, true);
-			i2c_master_write(cmd, font8x8_basic_tr[(uint8_t)text[i]], 8, true);
+        i2c_master_write(cmd, font8x8_basic_tr[(uint8_t)text[i]], 8, true);
+            // ESP_LOGI(TAG2, "Pressure: %.2f hPa", sensor_data.pressure);
 
-			i2c_master_stop(cmd);
-			i2c_master_cmd_begin(I2C_NUM_0, cmd, 10/portTICK_PERIOD_MS);
-			i2c_cmd_link_delete(cmd);
+        i2c_master_stop(cmd);
+        i2c_master_cmd_begin(I2C_NUM_0, cmd, 10/portTICK_PERIOD_MS);
+        i2c_cmd_link_delete(cmd);
 	}
+
 }
 
 void display_on_all_screen(const char *text) {
