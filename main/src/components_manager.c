@@ -3,6 +3,7 @@
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 #include "driver/gpio.h"
+#include "esp_timer.h"
 #include "config.h"
 #include "oled_library.c"
 #include "bmp280.c"
@@ -24,45 +25,54 @@ gpio_config_t blink_conf = {
     .intr_type = GPIO_INTR_DISABLE
 };
 
-void button_task(void *pvParameters){
+void button_task(void *pvParameters) {
     gpio_config(&io_conf);
 
     ssd1306_init_with_config(&oled_config);
+    ssd1306_fill_screen(0x00);
     bmp280_read_calibration_data();
     bmp280_init();
 
     while (true) {
-        int button_state = gpio_get_level(BUTTON_GPIO);
-        if (button_state == 0) {
+        if (gpio_get_level(BUTTON_GPIO) == 0) {
+            int64_t press_start_time = esp_timer_get_time();
 
-            bmp280_data_t sensor_data = bmp280_read_data();
-            ESP_LOGI(TAG2, "Temperature: %.2f °C", sensor_data.temperature);
-            ESP_LOGI(TAG2, "Pressure: %.2f hPa", sensor_data.pressure);
+            while (gpio_get_level(BUTTON_GPIO) == 0) {
+                vTaskDelay(pdMS_TO_TICKS(10));
+            }
+            int64_t press_duration_ms = (esp_timer_get_time() - press_start_time) / 1000;
+            if (press_duration_ms >= LONG_PRESS_TIME_MS) {
+                esp_restart();
+            } else {
+                bmp280_data_t sensor_data = bmp280_read_data();
+                ESP_LOGI(TAG2, "Temperature: %.2f °C", sensor_data.temperature);
+                ESP_LOGI(TAG2, "Pressure: %.2f hPa", sensor_data.pressure);
 
-            char temperature[50];
-            snprintf(temperature, sizeof(temperature), " %.2f *C", sensor_data.temperature);
-            char pressure[50];
-            snprintf(pressure, sizeof(pressure), " %.2f hPa", sensor_data.pressure);
+                char temperature[50];
+                snprintf(temperature, sizeof(temperature), " %.2f *C", sensor_data.temperature);
+                char pressure[50];
+                snprintf(pressure, sizeof(pressure), " %.2f hPa", sensor_data.pressure);
 
+                ssd1306_display_on();
+                vTaskDelay(1000 / portTICK_PERIOD_MS);
 
-            ssd1306_display_on();
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
+                display_on_page(" Temperature:", 0);
+                display_on_page(temperature, 1);
+                ssd1306_fill_page(0x00, 2);
+                display_on_page(" Pressure", 3);
+                display_on_page(pressure, 4);
+                ssd1306_fill_page(0x00, 5);
 
-            display_on_page(" Temperature:", 0);
-            display_on_page(temperature, 1);
-            ssd1306_fill_page(0x00, 2);
-            display_on_page(" Pressure", 3);
-            display_on_page(pressure, 4);
-            ssd1306_fill_page(0x00, 5);
-
-            vTaskDelay(5000 / portTICK_PERIOD_MS);
-            ssd1306_fill_screen(0x00);
-            ssd1306_display_off();
+                vTaskDelay(5000 / portTICK_PERIOD_MS);
+                ssd1306_fill_screen(0x00);
+                ssd1306_display_off();
+            }
         }
 
         vTaskDelay(pdMS_TO_TICKS(200));
     }
 }
+
 
 void led_task(void *pvParameters){
     gpio_config(&blink_conf);

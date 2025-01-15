@@ -59,8 +59,6 @@ bool ble_init() {
 
 void nimble_host_task(void *param) {
     ESP_LOGI(TAG, "nimble host task has been started!");
-
-    /* This function won't return until nimble_port_stop() is executed */
     nimble_port_run();
 
     vTaskDelete(NULL);

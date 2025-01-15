@@ -23,6 +23,7 @@
 #include "esp_log.h"
 #include "mqtt_client.h"
 #include "mqtt_manager.h"
+#include "config.h"
 
 char user[30] = "user";
 char mac_addr[18] = "mac_address";
@@ -90,7 +91,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI("MQTT", "MQTT_EVENT_CONNECTED");
 
-        int msg_id = esp_mqtt_client_subscribe(client, "username", 1);  // QoS = 1
+        int msg_id = esp_mqtt_client_subscribe(client, "username", 1);
         ESP_LOGI("MQTT", "Subscribed to topic, msg_id=%d", msg_id);
         xTaskCreate(mqtt_publish_task, "mqtt_publish_task", 4096, NULL, 5, NULL);
         // xTaskCreate(mqtt_receive_task, "mqtt_receive_task", 4096, NULL, 5, NULL);
@@ -115,12 +116,17 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         ESP_LOGI("MQTT", "MQTT_EVENT_DATA");
 
         char topic[128];
+        char data[128];
+
         snprintf(topic, sizeof(topic), "%.*s", event->topic_len, event->topic);
-        ESP_LOGI("MQTT", "Topic: %s, data: %s", topic, user);
+        snprintf(data, sizeof(data), "%.*s", event->data_len, event->data);
+        ESP_LOGI("MQTT", "Topic: %s, data: %s", topic, data);
 
         if(strcmp(topic, receive_user_topic) == 0) {
-            snprintf(user, sizeof(topic), "%.*s", event->data_len, event->data);
-            printf("DATA=%s", user);
+            strncpy(user, data, sizeof(user) - 1);
+            user[sizeof(user) - 1] = '\0';
+            
+            printf("USERNAME=%s", user);
         }
         break;
     case MQTT_EVENT_ERROR:
@@ -148,8 +154,7 @@ void mqtt_app_start(void)
     }
 
     esp_mqtt_client_config_t mqtt_cfg = {
-        // .broker.address.uri = CONFIG_BROKER_URL,
-        .broker.address.uri = "mqtt://192.168.121.210",
+        .broker.address.uri = BROKER_URI,
         .network.timeout_ms = 50000,
     };
 
