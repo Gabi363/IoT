@@ -47,6 +47,12 @@
         "bmx280.h": "c",
         "bmx280_bits.h": "c",
         "stdio.h": "c",
-        "esp_wifi.h": "c"
+        "esp_wifi.h": "c",
+        "semphr.h": "c",
+        "esp_timer.h": "c",
+        "bmp280.h": "c",
+        "sockets.h": "c",
+        "esp_random.h": "c",
+        "netdb.h": "c"
     }
 }

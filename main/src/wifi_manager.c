@@ -14,22 +14,12 @@
 #include "driver/gpio.h"
 #include "lwip/sockets.h"
 #include <stdio.h>
-// #include "ble_manager.h"
 #include <stdbool.h>
 #include "sdkconfig.h"
-// #include "host/ble_hs.h"
-// #include "host/ble_uuid.h"
-// #include "host/util/util.h"
-// #include "nimble/ble.h"
-// #include "nimble/nimble_port.h"
-// #include "nimble/nimble_port_freertos.h"
-// #include "gap.h"
-// #include "gatt_svc.h"
-// #include "cJSON.h"
 #include "esp_bt.h"
 #include "esp_random.h"
-#include "nvs_flash.h"
-#include "nvs.h"
+
+#include "esp_sntp.h"
 #include "config.h"
 #include "wifi_manager.h"
 
@@ -37,6 +27,37 @@ static int s_retry_num = 0;
 bool volatile WIFI_CONNECTED = false;
 static EventGroupHandle_t s_wifi_event_group;
 wifi_credentials_t wifi_credentials = {0};
+
+
+
+void initialize_sntp() {
+    ESP_LOGI("NTP", "Initializing SNTP...");
+    sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    sntp_setservername(0, "pool.ntp.org");
+    sntp_init();
+
+    time_t now = 0;
+    struct tm timeinfo = { 0 };
+    int retry = 0;
+    const int max_retries = 10;
+
+    while (timeinfo.tm_year < (2022 - 1900) && ++retry < max_retries) {
+        ESP_LOGI("NTP", "Waiting for time synchronization... (%d/%d)", retry, max_retries);
+        vTaskDelay(2000 / portTICK_PERIOD_MS); // Poczekaj 2 sekundy
+        time(&now);
+        localtime_r(&now, &timeinfo);
+    }
+
+    if (timeinfo.tm_year < (2022 - 1900)) {
+        ESP_LOGW("NTP", "Time synchronization failed!");
+    } else {
+        ESP_LOGI("NTP", "Time synchronized: %s", asctime(&timeinfo));
+        const char *timezone = "CET-1CEST,M3.5.0/02:00:00,M10.5.0/03:00:00";
+        setenv("TZ", timezone, 1);
+        tzset();
+        ESP_LOGI("TIMEZONE", "Timezone set to %s", timezone);
+    }
+}
 
 
 void save_wifi_ssid_to_nvs(char* ssid)
@@ -175,7 +196,8 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         s_retry_num = 0;
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
         WIFI_CONNECTED = true;
-        // xTaskCreate(&http_task, "http_task", 8192, NULL, 5, NULL);  // Tworzenie zadania HTTP GET
+        initialize_sntp();
+        // xTaskCreate(&http_task, "http_task", 8192, NULL, 5, NULL);
     }
 }
 

@@ -2,21 +2,14 @@
 #define WIFI_MANAGER_H
 
 #include "config.h"
-// #include "utilities.h"
-// typedef struct
-// {
-//     char ssid[100];
-//     char pass[100];
-// } wifi_credentials_t;
-// wifi_credentials_t wifi_credentials;
+
 
 typedef struct wifi_credentials_t
 {
     char ssid[100];
     char pass[100];
 } wifi_credentials_t;
-// struct wifi_credentials_t wifi_credentials = {0};
-// struct wifi_credentials_t;
+
 
 void save_wifi_ssid_to_nvs(char* ssid);
 void save_wifi_pass_to_nvs(char* pass);
