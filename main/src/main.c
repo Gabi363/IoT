@@ -54,6 +54,6 @@ void app_main(void)
         
 
     // MQTT
-    // mqtt_app_start();
+    mqtt_app_start();
 
 }

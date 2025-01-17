@@ -95,7 +95,7 @@ bool load_from_nvs(char* data, char* id)
 
 
 // MQTT PUBLIKACJA
-void mqtt_publish_task(void *pvParameters)
+void    mqtt_publish_task(void *pvParameters)
 {
     while (true)
     {
